@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		9137D63D2C2F4E360047DCD8 /* DaCo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9137D63C2C2F4E360047DCD8 /* DaCo.swift */; };
+		9137D6562C2FB27F0047DCD8 /* Header.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9137D6552C2FB27F0047DCD8 /* Header.swift */; };
+		9137D6582C2FB2940047DCD8 /* Server.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9137D6572C2FB2940047DCD8 /* Server.swift */; };
+		9137D65A2C2FB2AE0047DCD8 /* Dimensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9137D6592C2FB2AE0047DCD8 /* Dimensions.swift */; };
+		9137D65C2C2FB3130047DCD8 /* DeviceInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9137D65B2C2FB3130047DCD8 /* DeviceInfo.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +29,10 @@
 /* Begin PBXFileReference section */
 		9137D6392C2F4E360047DCD8 /* libDaCo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDaCo.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		9137D63C2C2F4E360047DCD8 /* DaCo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaCo.swift; sourceTree = "<group>"; };
+		9137D6552C2FB27F0047DCD8 /* Header.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Header.swift; sourceTree = "<group>"; };
+		9137D6572C2FB2940047DCD8 /* Server.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Server.swift; sourceTree = "<group>"; };
+		9137D6592C2FB2AE0047DCD8 /* Dimensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dimensions.swift; sourceTree = "<group>"; };
+		9137D65B2C2FB3130047DCD8 /* DeviceInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceInfo.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +66,10 @@
 			isa = PBXGroup;
 			children = (
 				9137D63C2C2F4E360047DCD8 /* DaCo.swift */,
+				9137D6552C2FB27F0047DCD8 /* Header.swift */,
+				9137D6572C2FB2940047DCD8 /* Server.swift */,
+				9137D6592C2FB2AE0047DCD8 /* Dimensions.swift */,
+				9137D65B2C2FB3130047DCD8 /* DeviceInfo.swift */,
 			);
 			path = DaCo;
 			sourceTree = "<group>";
@@ -120,7 +132,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9137D65A2C2FB2AE0047DCD8 /* Dimensions.swift in Sources */,
+				9137D6562C2FB27F0047DCD8 /* Header.swift in Sources */,
+				9137D6582C2FB2940047DCD8 /* Server.swift in Sources */,
 				9137D63D2C2F4E360047DCD8 /* DaCo.swift in Sources */,
+				9137D65C2C2FB3130047DCD8 /* DeviceInfo.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
