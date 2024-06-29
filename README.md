@@ -79,7 +79,7 @@ Any data may be returned from the server for this request and is accessible via 
 
 If a status code of `401` is returned then the server intialization will start again (See [Starting connection](#starting-connection)).
 
-## Pausing Data Updates
+### Pausing Data Updates
 
 If you wish to pause data updates, you can set `shouldPostData` to `false` (Data will still be collected on the device, but not sent).
 
