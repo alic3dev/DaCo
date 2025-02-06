@@ -13,6 +13,13 @@ enum DaCoError: Error {
   case invalidServerURL(String)
 }
 
+public struct DataToCollect {
+  public var attitude: Bool = true
+  public var acceleration: Bool = true
+  public var magneticField: Bool = true
+  public var rotation: Bool = true
+}
+
 public final class DaCo {
   private var server: Server
   public private(set) var serverURL: URL?
@@ -25,6 +32,10 @@ public final class DaCo {
 
   private var dataUpdateInterval: Double = 1.0 / 50.0 // 50.0hz
   private var timer: Timer?
+  private var timerBatchCount: Int8 = 0
+  private var timerBatchLimit: Int8 = 5
+
+  public var dataToCollect: DataToCollect
 
   private var attitude: Dimensions3Motion<[Double]> = .init(pitch: [], roll: [], yaw: [])
   private var acceleration: Dimensions3<[Double]> = .init(x: [], y: [], z: [])
@@ -33,14 +44,17 @@ public final class DaCo {
 
   public let motion: CMMotionManager = .init()
   public let ambientPressure: CMAmbientPressureData = .init()
+  public let altimeter: CMAltimeter?
 
-  var serverData: Data?
+  public private(set) var serverData: Data?
 
   public var shouldPostData: Bool = true
 
   var onServerActiveChangeCallback: ((Bool) -> Void)?
 
-  public init(server: Server) throws {
+  public init(server: Server, dataToCollect: DataToCollect? = nil, shouldPostData: Bool = true) throws {
+    self.shouldPostData = shouldPostData
+    
     self.server = server
     let newServerURL: URL? = DaCo.formulateServerURL(server: server)
 
@@ -49,6 +63,12 @@ public final class DaCo {
     }
 
     self.serverURL = newServerURL!
+
+    if dataToCollect != nil {
+      self.dataToCollect = dataToCollect!
+    } else {
+      self.dataToCollect = .init()
+    }
 
     if self.motion.isAccelerometerAvailable {
       self.motion.accelerometerUpdateInterval = self.dataUpdateInterval
@@ -69,6 +89,28 @@ public final class DaCo {
       self.motion.deviceMotionUpdateInterval = self.dataUpdateInterval
       self.motion.startDeviceMotionUpdates(using: .xArbitraryCorrectedZVertical)
     }
+
+//    if CMAltimeter.isAbsoluteAltitudeAvailable() {
+//      self.altimeter = CMAltimeter()
+//
+    ////      print(CMAltimeter.authorizationStatus() == .authorized)
+//
+//      self.altimeter!.startAbsoluteAltitudeUpdates(to: OperationQueue.main, withHandler: { _, _ in
+    ////        print("WTF")
+//
+    ////        if err != nil {
+    ////          print(err)
+    ////        }
+    ////
+    ////        if data != nil {
+    ////          print(data)
+    ////        } else {
+    ////          print("No Data")
+    ////        }
+//      })
+//    } else {
+    self.altimeter = nil
+//    }
 
     UIDevice.current.isBatteryMonitoringEnabled = true
     UIDevice.current.isProximityMonitoringEnabled = true
@@ -124,7 +166,11 @@ public final class DaCo {
     self.startServer()
   }
 
-  private func post(body: Data?, completionHandler: @escaping @Sendable (Data?, URLResponse?, (any Error)?) -> Void) {
+  private func post(body: Data?, completionHandler: @escaping @Sendable (Data?, URLResponse?, (any Error)?) -> Void = { _, _, _ in }) {
+    if (!self.shouldPostData) {
+      return;
+    }
+    
     var req: URLRequest = .init(url: self.serverURL!)
     req.allowsCellularAccess = false
     req.httpShouldUsePipelining = true
@@ -203,33 +249,46 @@ public final class DaCo {
       interval: self.dataUpdateInterval,
       repeats: true,
       block: { _ in
-        self.attitude.pitch.append(self.motion.deviceMotion?.attitude.pitch ?? 0)
-        self.attitude.roll.append(self.motion.deviceMotion?.attitude.roll ?? 0)
-        self.attitude.yaw.append(self.motion.deviceMotion?.attitude.yaw ?? 0)
+        self.timerBatchCount += 1
 
-        self.acceleration.x.append(self.motion.accelerometerData?.acceleration.x ?? 0)
-        self.acceleration.y.append(self.motion.accelerometerData?.acceleration.y ?? 0)
-        self.acceleration.z.append(self.motion.accelerometerData?.acceleration.z ?? 0)
-
-        self.magneticField.x.append(self.motion.magnetometerData?.magneticField.x ?? 0)
-        self.magneticField.y.append(self.motion.magnetometerData?.magneticField.y ?? 0)
-        self.magneticField.z.append(self.motion.magnetometerData?.magneticField.z ?? 0)
-
-        self.rotation.x.append(self.motion.gyroData?.rotationRate.x ?? 0)
-        self.rotation.y.append(self.motion.gyroData?.rotationRate.y ?? 0)
-        self.rotation.z.append(self.motion.gyroData?.rotationRate.z ?? 0)
-
-        if self.attitude.pitch.count < 5 {
-          return
+        if self.dataToCollect.attitude {
+          self.attitude.pitch.append(self.motion.deviceMotion?.attitude.pitch ?? 0)
+          self.attitude.roll.append(self.motion.deviceMotion?.attitude.roll ?? 0)
+          self.attitude.yaw.append(self.motion.deviceMotion?.attitude.yaw ?? 0)
         }
 
-        if self.shouldPostData {
-          self.postData { data in
-            self.serverData = data
+        if self.dataToCollect.acceleration {
+          self.acceleration.x.append(self.motion.accelerometerData?.acceleration.x ?? 0)
+          self.acceleration.y.append(self.motion.accelerometerData?.acceleration.y ?? 0)
+          self.acceleration.z.append(self.motion.accelerometerData?.acceleration.z ?? 0)
+        }
+
+        if self.dataToCollect.magneticField {
+          self.magneticField.x.append(self.motion.magnetometerData?.magneticField.x ?? 0)
+          self.magneticField.y.append(self.motion.magnetometerData?.magneticField.y ?? 0)
+          self.magneticField.z.append(self.motion.magnetometerData?.magneticField.z ?? 0)
+        }
+
+        if self.dataToCollect.rotation {
+          self.rotation.x.append(self.motion.gyroData?.rotationRate.x ?? 0)
+          self.rotation.y.append(self.motion.gyroData?.rotationRate.y ?? 0)
+          self.rotation.z.append(self.motion.gyroData?.rotationRate.z ?? 0)
+        }
+
+//        print(CMAmbientPressureData().pressure)
+//        print(CMAmbientPressureData().temperature)
+
+        if self.timerBatchCount >= self.timerBatchLimit {
+          self.timerBatchCount = 0
+          
+          if self.shouldPostData {
+            self.postData { data in
+              self.serverData = data
+            }
           }
-        }
 
-        self.resetData()
+          self.resetData()
+        }
       }
     )
     RunLoop.main.add(self.timer!, forMode: RunLoop.Mode.default)
@@ -243,37 +302,60 @@ public final class DaCo {
   }
 
   private func postData(
-    callback: @escaping (Data?) -> Void
+    callback: @escaping (Data?) -> Void = { _ in }
   ) {
     if self.serverURL == nil || !self.serverStarted || self.serverUUID == nil {
       return
+    }
+
+    var dataBodyString = ""
+
+    if self.dataToCollect.attitude {
+      dataBodyString += """
+        , "attitude": {
+          "pitch": \(self.attitude.pitch),
+          "roll": \(self.attitude.roll),
+          "yaw": \(self.attitude.yaw)
+        }
+      """
+    }
+
+    if self.dataToCollect.acceleration {
+      dataBodyString += """
+        , "acceleration": {
+          "x": \(self.acceleration.x),
+          "y": \(self.acceleration.y),
+          "z": \(self.acceleration.z)
+        }
+      """
+    }
+
+    if self.dataToCollect.magneticField {
+      dataBodyString += """
+        , "magneticField": {
+          "x": \(self.magneticField.x),
+          "y": \(self.magneticField.y),
+          "z": \(self.magneticField.z)
+        }
+      """
+    }
+
+    if self.dataToCollect.rotation {
+      dataBodyString += """
+        , "rotation": {
+          "x": \(self.rotation.x),
+          "y": \(self.rotation.y),
+          "z": \(self.rotation.z)
+        }
+      """
     }
 
     let body: Data? = """
     {
       "type": "data",
       "uuid": "\(self.serverUUID!)",
-      "timestamp": "\(Date.now.timeIntervalSince1970)",
-      "attitude": {
-        "pitch": \(self.attitude.pitch),
-        "roll": \(self.attitude.roll),
-        "yaw": \(self.attitude.yaw)
-      },
-      "acceleration": {
-        "x": \(self.acceleration.x),
-        "y": \(self.acceleration.y),
-        "z": \(self.acceleration.z)
-      },
-      "magneticField": {
-        "x": \(self.magneticField.x),
-        "y": \(self.magneticField.y),
-        "z": \(self.magneticField.z)
-      },
-      "rotation": {
-        "x": \(self.rotation.x),
-        "y": \(self.rotation.y),
-        "z": \(self.rotation.z)
-      }
+      "timestamp": "\(Date.now.timeIntervalSince1970)"
+      \(dataBodyString)
     }
     """.data(using: .utf8)
 
